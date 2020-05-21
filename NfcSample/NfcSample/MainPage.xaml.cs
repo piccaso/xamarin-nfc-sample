@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AppCenter.Analytics;
 using Plugin.NFC;
 using Xamarin.Forms;
 
@@ -14,10 +15,6 @@ namespace NfcSample {
     public partial class MainPage : ContentPage {
         public MainPage() {
             InitializeComponent();
-        }
-
-        protected override void OnAppearing() {
-            base.OnAppearing();
         }
 
         private void AppendText(string text) {
@@ -54,19 +51,21 @@ namespace NfcSample {
             var id = NFCUtils.ByteArrayToHexString(tagInfo.Identifier);
             AppendText($"Identifier = {id}");
             AppendText($"tagInfo.IsEmpty = {tagInfo.IsEmpty}");
-            AppendText($"tagInfo.IsSupported = {tagInfo.IsSupported}");
             AppendText($"tagInfo.IsWritable = {tagInfo.IsWritable}");
-            if (tagInfo.Records != null) {
+            if (tagInfo.Records != null && tagInfo.Records.Any()) {
+                AppendText($"tagInfo.Records.Length = {tagInfo.Records.Length}");
                 foreach (var record in tagInfo.Records) {
                     if (record.Payload != null && record.Payload.Any()) {
                         var payload = NFCUtils.ByteArrayToHexString(record.Payload);
                         AppendText($"record.Payload = {payload}");
                     }
+                    if (record.Message != null) {
+                        AppendText($"record.Message = {record.Message}");
+                    }
                 }
             }
-            Device.BeginInvokeOnMainThread(() => {
-                CrossNFC.Current.StartListening();
-            });
+            Device.BeginInvokeOnMainThread(CrossNFC.Current.StartListening);
+            Analytics.TrackEvent("NfcTag", new Dictionary<string, string>{{"Identifier", id}});
         }
         private void EnableButtonClicked(object sender, EventArgs e) {
             try {
